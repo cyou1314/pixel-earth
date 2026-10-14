@@ -2,6 +2,12 @@ const canvas = document.querySelector('#world');
 const errorBox = document.querySelector('#error');
 const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: 'low-power' });
 
+const LIGHT_PRESETS = {
+  "day": { "sun": 135, "fill": 55, "brightness": 110, "azimuth": -38, "elevation": 42, "warmth": 0.25 },
+  "warm": { "sun": 145, "fill": 50, "brightness": 110, "azimuth": -48, "elevation": 27, "warmth": 0.65 },
+  "side": { "sun": 165, "fill": 62, "brightness": 110, "azimuth": -88, "elevation": 32, "warmth": 0.28 }
+};
+
 const vertexSource = `
 attribute vec2 a_position;
 void main() { gl_Position = vec4(a_position, 0.0, 1.0); }
@@ -14,6 +20,11 @@ precision highp float;
 uniform vec2 u_resolution;
 uniform vec2 u_rotation;
 uniform float u_distance;
+uniform vec3 u_sunDirection;
+uniform float u_sunIntensity;
+uniform float u_ambientIntensity;
+uniform float u_exposure;
+uniform float u_warmth;
 
 float hash(vec3 p) {
   p = fract(p * 0.1031);
@@ -60,12 +71,49 @@ float terrain(vec3 n) {
     0.75*mass(n,vec3(-0.6,0.62,-0.75),5.9);
   return shape - 0.54 + fbm(n*5.0 + vec3(3.0,7.0,1.0))*0.42;
 }
+vec3 toneMap(vec3 light) {
+  vec3 x=max(light*u_exposure,vec3(0.0));
+  return 1.0-exp(-x*1.4);
+}
+vec3 sunColor() {
+  return mix(vec3(1.0,0.99,0.96),vec3(1.17,0.95,0.70),u_warmth);
+}
+vec3 skyLight(vec3 direction) {
+  float height=clamp(direction.y*0.5+0.5,0.0,1.0);
+  vec3 sky=mix(vec3(0.71,0.82,0.90),vec3(0.37,0.58,0.79),height);
+  return pow(sky,vec3(2.2));
+}
+vec3 surfaceLight(vec3 n, vec3 view, vec3 albedo, float land) {
+  float diffuse=max(dot(n,u_sunDirection),0.0);
+  float height=n.y*0.5+0.5;
+  vec3 hemisphere=mix(vec3(0.45,0.49,0.47),vec3(0.76,0.85,1.0),height);
+  vec3 irradiance=hemisphere*u_ambientIntensity+sunColor()*u_sunIntensity*diffuse;
+  vec3 result=pow(albedo,vec3(2.2))*irradiance;
+
+  vec3 halfVector=u_sunDirection+view;
+  vec3 halfDir=halfVector*inversesqrt(max(dot(halfVector,halfVector),0.0001));
+  float ndh=max(dot(n,halfDir),0.0);
+  float highlight=0.18*pow(ndh,128.0)+0.035*pow(ndh,18.0);
+  result+=sunColor()*highlight*u_sunIntensity*diffuse*(1.0-land);
+
+  float facing=max(dot(n,view),0.0);
+  float fresnel=0.02+0.98*pow(1.0-facing,5.0);
+  vec3 reflected=reflect(-view,n);
+  result+=skyLight(reflected)*fresnel*u_ambientIntensity*0.72*(1.0-land);
+
+  float rim=pow(1.0-facing,3.0);
+  float sunlight=smoothstep(-0.25,0.85,dot(n,u_sunDirection));
+  vec3 air=mix(vec3(0.14,0.31,0.46),vec3(0.34,0.59,0.83),sunlight);
+  result+=air*rim*(0.07+0.05*u_sunIntensity);
+  return result;
+}
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution;
   vec2 p = (2.0*gl_FragCoord.xy-u_resolution)/u_resolution.y;
-  vec3 sky = mix(vec3(0.75,0.84,0.89),vec3(0.40,0.59,0.75),uv.y);
-  float glow = exp(-3.2*dot(p-vec2(-1.4,1.1),p-vec2(-1.4,1.1)));
-  sky += vec3(0.085,0.055,0.015)*glow;
+  vec3 sky=pow(mix(vec3(0.75,0.84,0.89),vec3(0.40,0.59,0.75),uv.y),vec3(2.2));
+  vec2 sunPosition=u_sunDirection.xy*1.8;
+  float glow=exp(-2.0*dot(p-sunPosition,p-sunPosition));
+  sky+=sunColor()*glow*u_sunIntensity*0.032*max(u_sunDirection.z,0.0);
   vec3 ro = vec3(0.0,0.0,u_distance);
   vec3 rd = normalize(vec3(p,-2.7));
   float b = dot(ro,rd);
@@ -83,27 +131,20 @@ void main() {
     vec3 ocean=mix(vec3(0.17,0.39,0.53),vec3(0.20,0.45,0.53),1.0-coast);
     vec3 soil=mix(vec3(0.43,0.59,0.43),vec3(0.55,0.66,0.48),smoothstep(0.0,0.58,h));
     vec3 albedo=mix(ocean,soil,land);
-    vec3 light=normalize(vec3(-0.72,0.70,0.62));
-    float diffuse=max(dot(n,light),0.0);
-    float fill=0.26+0.055*max(dot(n,normalize(vec3(0.3,-0.6,0.8))),0.0);
-    vec3 linear=pow(albedo,vec3(2.2))*(vec3(fill)+vec3(1.04,0.98,0.88)*diffuse);
     vec3 view=normalize(ro-pos);
-    vec3 halfDir=normalize(light+view);
-    float spec=pow(max(dot(n,halfDir),0.0),105.0);
-    linear += vec3(0.11,0.12,0.12)*spec*(1.0-land)*smoothstep(0.0,0.25,diffuse);
-    color=pow(max(linear,vec3(0.0)),vec3(1.0/2.2));
-    float rim=pow(1.0-max(dot(n,view),0.0),3.2);
-    color=mix(color,vec3(0.55,0.75,0.87),rim*0.30);
+    color=surfaceLight(n,view,albedo,land);
     float edge=smoothstep(0.0,0.007,disc);
     color=mix(sky,color,edge);
   } else {
     float outerDisc=b*b-(dot(ro,ro)-1.018*1.018);
     if(outerDisc>0.0) {
-      float halo=smoothstep(0.0,0.055,outerDisc)*0.12;
-      color=mix(sky,vec3(0.76,0.88,0.94),halo);
+      vec3 tangent=normalize(ro-rd*b);
+      float lit=smoothstep(-0.2,0.8,dot(tangent,u_sunDirection));
+      float halo=smoothstep(0.0,0.055,outerDisc)*(0.045+0.08*lit);
+      color=sky+vec3(0.29,0.49,0.72)*halo;
     }
   }
-  gl_FragColor=vec4(clamp(color,0.0,1.0),1.0);
+  gl_FragColor=vec4(pow(toneMap(color),vec3(1.0/2.2)),1.0);
 }
 `;
 
@@ -152,8 +193,14 @@ function start() {
   const resolution=gl.getUniformLocation(program,'u_resolution');
   const rotation=gl.getUniformLocation(program,'u_rotation');
   const camera=gl.getUniformLocation(program,'u_distance');
+  const sunDirection=gl.getUniformLocation(program,'u_sunDirection');
+  const sunIntensity=gl.getUniformLocation(program,'u_sunIntensity');
+  const ambientIntensity=gl.getUniformLocation(program,'u_ambientIntensity');
+  const exposure=gl.getUniformLocation(program,'u_exposure');
+  const warmth=gl.getUniformLocation(program,'u_warmth');
   const initial={yaw:-0.62,pitch:0.18,distance:3.65};
   const state={...initial}, target={...initial};
+  const lightState={...LIGHT_PRESETS.day}, lightTarget={...LIGHT_PRESETS.day};
   const pointers=new Map();
   const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
   let scheduled=false, lost=false, pinchDistance=0, pinchCamera=initial.distance;
@@ -172,9 +219,21 @@ function start() {
       state[key]+=delta*factor;
       remaining+=Math.abs(delta);
     }
+    for(const key of Object.keys(lightState)) {
+      const delta=lightTarget[key]-lightState[key];
+      lightState[key]+=delta*factor;
+      remaining+=Math.abs(delta)*0.01;
+    }
     gl.uniform2f(resolution,canvas.width,canvas.height);
     gl.uniform2f(rotation,state.yaw,state.pitch);
     gl.uniform1f(camera,state.distance);
+    const azimuth=lightState.azimuth*Math.PI/180;
+    const elevation=lightState.elevation*Math.PI/180;
+    gl.uniform3f(sunDirection,Math.sin(azimuth)*Math.cos(elevation),Math.sin(elevation),Math.cos(azimuth)*Math.cos(elevation));
+    gl.uniform1f(sunIntensity,lightState.sun*0.0185);
+    gl.uniform1f(ambientIntensity,lightState.fill*0.01);
+    gl.uniform1f(exposure,lightState.brightness*0.01);
+    gl.uniform1f(warmth,lightState.warmth);
     gl.drawArrays(gl.TRIANGLES,0,6);
     if (remaining>0.0001) schedule();
   }
@@ -241,6 +300,50 @@ function start() {
   document.querySelector('#in').addEventListener('click',()=>zoom(0.86));
   document.querySelector('#out').addEventListener('click',()=>zoom(1.16));
   document.querySelector('#reset').addEventListener('click',reset);
+
+  const lightButton=document.querySelector('#lighting-control');
+  const lightPanel=document.querySelector('#lighting-panel');
+  const lightInputs=[...lightPanel.querySelectorAll('input[data-light]')];
+  const presetButtons=[...lightPanel.querySelectorAll('[data-preset]')];
+  function refreshLightingControls() {
+    for(const input of lightInputs) {
+      const value=lightTarget[input.dataset.light];
+      input.value=value;
+      document.querySelector('#'+input.id+'-value').textContent=Math.round(value)+input.dataset.unit;
+    }
+    for(const button of presetButtons) {
+      const preset=LIGHT_PRESETS[button.dataset.preset];
+      button.setAttribute('aria-pressed',String(Object.keys(preset).every(key=>Math.abs(lightTarget[key]-preset[key])<0.01)));
+    }
+  }
+  function applyPreset(name) {
+    Object.assign(lightTarget,LIGHT_PRESETS[name]);
+    refreshLightingControls(); schedule();
+  }
+  function closeLighting() {
+    lightPanel.hidden=true;
+    lightButton.setAttribute('aria-expanded','false');
+  }
+  lightButton.addEventListener('click',()=>{
+    lightPanel.hidden=!lightPanel.hidden;
+    lightButton.setAttribute('aria-expanded',String(!lightPanel.hidden));
+  });
+  for(const input of lightInputs) input.addEventListener('input',()=>{
+    const value=Number(input.value);
+    if(!Number.isFinite(value)) return;
+    lightTarget[input.dataset.light]=clamp(value,Number(input.min),Number(input.max));
+    refreshLightingControls(); schedule();
+  });
+  for(const button of presetButtons) button.addEventListener('click',()=>applyPreset(button.dataset.preset));
+  document.querySelector('#lighting-reset').addEventListener('click',()=>applyPreset('day'));
+  document.querySelector('#lighting-close').addEventListener('click',closeLighting);
+  document.addEventListener('click',event=>{
+    if(!lightPanel.hidden&&!lightPanel.contains(event.target)&&!lightButton.contains(event.target)) closeLighting();
+  });
+  document.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&!lightPanel.hidden) { closeLighting(); lightButton.focus(); }
+  });
+  refreshLightingControls();
   window.addEventListener('blur',()=>pointers.clear());
   window.addEventListener('resize',resize);
   canvas.addEventListener('webglcontextlost',event=>{

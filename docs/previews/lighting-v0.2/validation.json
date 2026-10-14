@@ -1,0 +1,15 @@
+{
+  "shader_compile": "passed",
+  "shader_link": "passed",
+  "render": "passed",
+  "lighting_presets": "passed",
+  "lighting_controls": "passed",
+  "rotation_zoom_reset": "passed",
+  "control_boundary_render": "passed",
+  "before_mean_display_brightness": 0.3878,
+  "after_mean_display_brightness": 0.5844,
+  "relative_display_brightness_gain": 1.507,
+  "white_clipping_fraction": 0.0,
+  "renderer": "desktop OpenGL via surfaceless EGL, not browser WebGL",
+  "browser_qa": "not performed"
+}
