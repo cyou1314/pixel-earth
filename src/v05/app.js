@@ -61,7 +61,9 @@ async function start() {
       const input = gestureInput.update(points, target);
       if (input.yaw !== undefined) target.yaw = input.yaw;
       if (input.pitch !== undefined) target.pitch = input.pitch;
-      if (input.distance !== undefined) target.distance = input.distance;
+      // Gesture zoom goes through the same authoritative limits as the buttons
+      // and wheel so the zoom controls never desync at the extremes.
+      if (input.distance !== undefined) target.distance = limitZoom(input.distance);
       sayGesture(input.mode === 'pinch' ? '捏合缩放中 · 前后移动手掌' : input.mode === 'palm' ? '手掌旋转中 · 握拳暂停' : input.mode === 'rest' ? '已暂停 · 张开手掌继续' : '把一只手放进画面');
       refreshZoom(); schedule();
     }
@@ -171,7 +173,7 @@ async function start() {
       ArrowDown: () => { target.pitch = clamp(target.pitch + 0.1, -1.45, 1.45); },
       '+': () => zoom(0.9), '=': () => zoom(0.9), '-': () => zoom(1.1), Home: reset
     };
-    if (actions[event.key]) { event.preventDefault(); actions[event.key](); schedule(); }
+    if (actions[event.key]) { event.preventDefault(); gestureInput.reset(); actions[event.key](); schedule(); }
   });
   zoomIn.addEventListener('click', () => zoom(0.86));
   zoomOut.addEventListener('click', () => zoom(1.16));
