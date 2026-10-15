@@ -8,7 +8,8 @@ import { InternalTexture, InternalTextureSource } from '@babylonjs/core/Material
 import { SphericalPolynomial } from '@babylonjs/core/Maths/sphericalPolynomial.js';
 import { WebGLShaderProcessor } from '@babylonjs/core/Engines/WebGL/webGLShaderProcessors.js';
 import { Vector3 } from '@babylonjs/core/Maths/math.js';
-import { createPlanetScene, loadPlanet, framePlanet, INITIAL_VIEW, LIGHT_PRESETS, limitZoom } from '../src/scene.js';
+import { createPlanetScene, framePlanet, INITIAL_VIEW, LIGHT_PRESETS, limitZoom } from '../src/scene.js';
+import { loadPlanet } from '../src/load-planet.js';
 
 // Real glTF parsing and scene construction; NullEngine does not render pixels.
 const engine = new NullEngine({ renderWidth: 1280, renderHeight: 800, textureSize: 128, deterministicLockstep: true, lockstepMaxSteps: 4 });

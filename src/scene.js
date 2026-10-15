@@ -10,10 +10,6 @@ import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight.js';
 import { ShadowGenerator } from '@babylonjs/core/Lights/Shadows/shadowGenerator.js';
 import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imageProcessingConfiguration.js';
 import { HDRCubeTexture } from '@babylonjs/core/Materials/Textures/hdrCubeTexture.js';
-import { ImportMeshAsync } from '@babylonjs/core/Loading/sceneLoader.js';
-import '@babylonjs/loaders/glTF/index.js';
-import { OceanSurface } from './ocean.js';
-import { LandSurface } from './surface.js';
 
 export const INITIAL_VIEW = Object.freeze({ yaw: -0.62, pitch: 0.18, distance: 3.65 });
 export const LIGHT_PRESETS = Object.freeze({
@@ -130,28 +126,4 @@ export function createPlanetScene(engine, { environment = true } = {}) {
     get environmentReady() { return !environment || environmentReady; },
     dispose() { env?.dispose(); scene.dispose(); }
   };
-}
-
-export async function loadPlanet(model, source = './assets/planet-v0.4.glb') {
-  const result = await ImportMeshAsync(source, model.scene, { pluginExtension: '.glb' });
-  for (const mesh of result.meshes) {
-    if (!mesh.parent) mesh.parent = model.root;
-    if (mesh.getTotalVertices() === 0) continue;
-    mesh.isPickable = false;
-    mesh.receiveShadows = true;
-    if (mesh.name === 'Land') model.shadows.addShadowCaster(mesh, false);
-    if (mesh.material) {
-      mesh.material.environmentIntensity = mesh.name === 'Ocean' ? 0.95 : 0.6;
-      mesh.material.enableSpecularAntiAliasing = true;
-      if (mesh.name === 'Ocean') {
-        mesh.material.roughness = 0.26;
-        mesh.material.metallicF0Factor = 0.56;
-        model.oceanSurface = new OceanSurface(mesh.material);
-      } else if (mesh.name === 'Land') {
-        mesh.material.roughness = 0.94;
-        model.landSurface = new LandSurface(mesh.material);
-      }
-    }
-  }
-  return result;
 }

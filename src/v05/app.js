@@ -31,6 +31,8 @@ async function start() {
   const model = createCubeWorld(engine);
   const state = { ...INITIAL_VIEW }, target = { ...INITIAL_VIEW };
   const lightState = { ...LIGHT_PRESETS.day }, lightTarget = { ...LIGHT_PRESETS.day };
+  // Hoisted once: the render loop below must not allocate per frame.
+  const stateKeys = Object.keys(state), lightKeys = Object.keys(lightState);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const pointers = new Map();
   let framesLeft = 2, loaded = false, ready = false, pinchDistance = 0, pinchCamera = INITIAL_VIEW.distance;
@@ -87,10 +89,15 @@ async function start() {
   });
   window.addEventListener('pagehide', () => { void camera.stop(); });
 
+  // Pinch pointermove fires rapidly; only touch the DOM when something changed.
+  let lastZoomText = '', lastZoomInDisabled, lastZoomOutDisabled;
   function refreshZoom() {
-    zoomValue.textContent = Math.round(INITIAL_VIEW.distance / target.distance * 100) + '%';
-    zoomIn.disabled = !ready || lost || target.distance <= limitZoom(0) + 0.001;
-    zoomOut.disabled = !ready || lost || target.distance >= limitZoom(Infinity) - 0.001;
+    const text = Math.round(INITIAL_VIEW.distance / target.distance * 100) + '%';
+    if (text !== lastZoomText) { zoomValue.textContent = text; lastZoomText = text; }
+    const inDisabled = !ready || lost || target.distance <= limitZoom(0) + 0.001;
+    if (inDisabled !== lastZoomInDisabled) { zoomIn.disabled = inDisabled; lastZoomInDisabled = inDisabled; }
+    const outDisabled = !ready || lost || target.distance >= limitZoom(Infinity) - 0.001;
+    if (outDisabled !== lastZoomOutDisabled) { zoomOut.disabled = outDisabled; lastZoomOutDisabled = outDisabled; }
   }
 
   function resize() {
@@ -260,12 +267,12 @@ async function start() {
     const factor = reducedMotion.matches ? 1 : 1 - Math.exp(-dt / 0.065);
     if (!reducedMotion.matches) waterTime += dt;
     let remaining = 0;
-    for (const key of Object.keys(state)) {
+    for (const key of stateKeys) {
       const delta = target[key] - state[key];
       state[key] += delta * factor;
       remaining += Math.abs(delta);
     }
-    for (const key of Object.keys(lightState)) {
+    for (const key of lightKeys) {
       const delta = lightTarget[key] - lightState[key];
       lightState[key] += delta * factor;
       remaining += Math.abs(delta) * 0.01;

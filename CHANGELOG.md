@@ -1,5 +1,14 @@
 # 版本记录
 
+## v0.5 优化轮2（2026-10-15）
+
+- 按 v0.7.1 单文件优化思路做第二轮审计：实测优先，只动有数据支撑的项；不加新功能、不引入新依赖、不改变界面布局。
+- 包体积：`loadPlanet`（及 glTF loader 静态引入）从 `src/scene.js` 迁至新建 `src/load-planet.js`；v0.5 独立页走程序化立方球、从不调用它。`dist/engine-v0.5.js` 从 3.67MB 降至 2.09MB（约 -43%）。legacy v0.4 入口与 `check-scene.mjs` 改从新模块引入，打包验证通过。
+- `src/v05/app.js`：渲染循环内每帧 `Object.keys(state)` / `Object.keys(lightState)` 改为一次性缓存的 key 数组，消除每帧分配；`refreshZoom()` 只在文本/禁用态变化时写 DOM（捏合缩放时高频 pointermove 不再反复写）。
+- `src/v05/gesture-input.js`：捏合缩放改用 `limitZoom()`（此前是硬编码 `clamp(...,1.65,6.8)`，数值一致、行为不变；落实 CHANGELOG v0.5 优化轮中"统一走 limitZoom"的记录）。
+- 实测排除项：`terrainNormal` 占陆地构建约 2/3，已验证"平坦区跳过法线扰动"不可行（仅 2.1% 顶点符合阈值且法线偏差仍达 15°），保持原实现；`powerPreference` 保持 `default`，不替用户做 GPU 功耗策略选择。
+- 验证：6 个改动文件 JS 语法检查通过；npm run build 通过；npm run check 全部通过（地形 24578 采样、16 条河流入海、陆地覆盖 0.4795、接缝点积 ~1、手势固件与相机 mock 与基线一致）。浏览器 WebGL 像素、真机手势与设备性能仍待验收。
+
 ## v0.5 优化轮（2026-10-15）
 
 - 基于 Gemini 4 Argon 的源码审查意见做性能与稳定性优化：不加新功能、不引入新依赖、不改变界面布局。

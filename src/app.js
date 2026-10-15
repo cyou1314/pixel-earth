@@ -1,5 +1,6 @@
 import { Engine } from '@babylonjs/core/Engines/engine.js';
-import { createPlanetScene, loadPlanet, framePlanet, INITIAL_VIEW, LIGHT_PRESETS, clamp, limitZoom } from './scene.js';
+import { createPlanetScene, framePlanet, INITIAL_VIEW, LIGHT_PRESETS, clamp, limitZoom } from './scene.js';
+import { loadPlanet } from './load-planet.js';
 
 const canvas = document.querySelector('#world');
 const errorBox = document.querySelector('#error');

@@ -1,4 +1,5 @@
 // Pure landmark-to-view mapping, shared with deterministic input checks.
+import { limitZoom } from '../scene.js';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export class GestureInput {
@@ -12,7 +13,7 @@ export class GestureInput {
     if(ratio<(this.pinch ? .5 : .34)){
       if(!this.pinch)this.pinch={width,distance:view.distance};
       this.previous=null;
-      return {mode:'pinch',distance:clamp(this.pinch.distance*this.pinch.width/width,1.65,6.8)};
+      return {mode:'pinch',distance:limitZoom(this.pinch.distance*this.pinch.width/width)};
     }
     this.pinch=null;
     // A finger counts as extended only when the tip is clearly beyond both the
