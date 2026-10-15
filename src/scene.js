@@ -24,6 +24,10 @@ export const LIGHT_PRESETS = Object.freeze({
 export const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 export const limitZoom = value => clamp(value, 1.65, 6.8);
 
+// Module-scope temporaries so the per-frame update() allocates nothing.
+const SUN_NEUTRAL = new Color3(1, 0.99, 0.96), SUN_WARM = new Color3(1.12, 0.86, 0.62);
+const _sunDir = new Vector3();
+
 export function framePlanet(camera, width, height) {
   const w = Math.max(1, width), h = Math.max(1, height);
   // Fit the shorter side, with room for the header and bottom controls.
@@ -108,17 +112,17 @@ export function createPlanetScene(engine, { environment = true } = {}) {
       .multiply(Quaternion.RotationAxis(Vector3.Up(), view.yaw));
     camera.position.z = view.distance;
     const az = light.azimuth * Math.PI / 180, el = light.elevation * Math.PI / 180;
-    const direction = new Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
-    sun.position.copyFrom(direction.scale(3.5));
-    sun.direction.copyFrom(direction.negate());
-    sun.diffuse = Color3.Lerp(new Color3(1, 0.99, 0.96), new Color3(1.12, 0.86, 0.62), light.warmth);
+    _sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+    sun.position.set(_sunDir.x * 3.5, _sunDir.y * 3.5, _sunDir.z * 3.5);
+    sun.direction.set(-_sunDir.x, -_sunDir.y, -_sunDir.z);
+    Color3.LerpToRef(SUN_NEUTRAL, SUN_WARM, light.warmth, sun.diffuse);
     sun.specular.copyFrom(sun.diffuse);
     sun.intensity = light.sun * 0.031;
     fill.intensity = light.fill * 0.006;
     scene.environmentIntensity = light.fill * 0.012;
     image.exposure = light.brightness * 0.01;
     airMaterial.setVector3('eye', camera.position);
-    airMaterial.setVector3('sunDirection', direction);
+    airMaterial.setVector3('sunDirection', _sunDir);
     airMaterial.setFloat('strength', 0.10 + light.sun * 0.0003);
   }
   update(INITIAL_VIEW, LIGHT_PRESETS.day);
