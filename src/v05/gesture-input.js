@@ -15,7 +15,13 @@ export class GestureInput {
       return {mode:'pinch',distance:clamp(this.pinch.distance*this.pinch.width/width,1.65,6.8)};
     }
     this.pinch=null;
-    const extended=[[8,6],[12,10],[16,14],[20,18]].filter(([tip,pip])=>distance(points[tip],points[0])>distance(points[pip],points[0])*1.12).length;
+    // A finger counts as extended only when the tip is clearly beyond both the
+    // PIP and the MCP joints: curled fingers hovering in front of the palm
+    // otherwise read as extended and fight the fist-to-pause gesture.
+    const extended=[[8,6,5],[12,10,9],[16,14,13],[20,18,17]].filter(([tip,pip,mcp])=>{
+      const dTip=distance(points[tip],points[0]);
+      return dTip>distance(points[pip],points[0])*1.12&&dTip>distance(points[mcp],points[0])*1.32;
+    }).length;
     if(extended<3){this.previous=null;return{mode:'rest'};}
     const center={x:1-[0,5,9,13,17].reduce((s,i)=>s+points[i].x,0)/5,y:[0,5,9,13,17].reduce((s,i)=>s+points[i].y,0)/5};
     const previous=this.previous;this.previous=center;
