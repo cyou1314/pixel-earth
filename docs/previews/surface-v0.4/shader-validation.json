@@ -1,0 +1,16 @@
+{
+  "context": "surfaceless EGL desktop OpenGL, not browser WebGL",
+  "programs": {
+    "Land": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    },
+    "Ocean": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    }
+  },
+  "adaptation": "Babylon WebGLShaderProcessor used in NullEngine; GLSL 330 compatibility, WebGL extension directives removed and EXT texture names mapped to core functions."
+}

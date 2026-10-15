@@ -1,0 +1,86 @@
+{
+  "version": "0.4.1",
+  "engine": "Babylon.js 9.30.0",
+  "meshes": {
+    "Land": {
+      "vertices": 41903,
+      "triangles": 82368,
+      "minRadius": 0.9385176851671743,
+      "maxRadius": 1.016935648962969,
+      "material": "PBRMaterial",
+      "roughness": 0.94,
+      "maxSeamNormalAngleDegrees": 0,
+      "receivesShadows": true
+    },
+    "Ocean": {
+      "vertices": 18719,
+      "triangles": 36480,
+      "minRadius": 0.9999999618764057,
+      "maxRadius": 1.000000038125435,
+      "material": "PBRMaterial",
+      "roughness": 0.26,
+      "maxSeamNormalAngleDegrees": 0,
+      "receivesShadows": true
+    }
+  },
+  "framing": [
+    {
+      "width": 1280,
+      "height": 800,
+      "horizontalFraction": 0.4123,
+      "verticalFraction": 0.6596
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "horizontalFraction": 0.39,
+      "verticalFraction": 0.6934
+    },
+    {
+      "width": 800,
+      "height": 800,
+      "horizontalFraction": 0.6596,
+      "verticalFraction": 0.6596
+    },
+    {
+      "width": 393,
+      "height": 852,
+      "horizontalFraction": 0.7096,
+      "verticalFraction": 0.3273,
+      "oldPortraitClipped": true
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "horizontalFraction": 0.6912,
+      "verticalFraction": 0.3894
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "horizontalFraction": 0.2415,
+      "verticalFraction": 0.5226
+    }
+  ],
+  "landCoverage": {
+    "fraction": 0.47882042935697966,
+    "method": "solid-angle weighted exported mesh triangles; coastal triangles classified by mean radius"
+  },
+  "checks": [
+    "actual glTF import",
+    "finite geometry and outward normals",
+    "continuous normals at seams and poles",
+    "real terrain relief and round ocean",
+    "separate PBR materials and seamless 3D ocean wave plugin",
+    "animated uniform cached-material binding",
+    "shadow caster and receivers",
+    "HDR decoding and six cube faces",
+    "lighting presets and sun direction",
+    "camera limits and reset",
+    "actual projection at six landscape/portrait sizes and old clipping reproduction",
+    "view preserved by framing",
+    "land detail and filtered ocean shader branches",
+    "DOM IDs and local resources"
+  ],
+  "verification": "Bundled Babylon.js code checked with Node NullEngine. No browser WebGL, GUI, screenshot, or device performance test."
+}

@@ -12,15 +12,27 @@ import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imagePro
 import { HDRCubeTexture } from '@babylonjs/core/Materials/Textures/hdrCubeTexture.js';
 import { ImportMeshAsync } from '@babylonjs/core/Loading/sceneLoader.js';
 import '@babylonjs/loaders/glTF/index.js';
+import { OceanSurface } from './ocean.js';
+import { LandSurface } from './surface.js';
 
 export const INITIAL_VIEW = Object.freeze({ yaw: -0.62, pitch: 0.18, distance: 3.65 });
 export const LIGHT_PRESETS = Object.freeze({
-  day: { sun: 135, fill: 55, brightness: 110, azimuth: -38, elevation: 42, warmth: 0.25 },
+  day: { sun: 135, fill: 55, brightness: 110, azimuth: 32, elevation: 42, warmth: 0.25 },
   warm: { sun: 145, fill: 50, brightness: 110, azimuth: -48, elevation: 27, warmth: 0.65 },
   side: { sun: 165, fill: 62, brightness: 110, azimuth: -88, elevation: 32, warmth: 0.28 }
 });
 export const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 export const limitZoom = value => clamp(value, 1.65, 6.8);
+
+export function framePlanet(camera, width, height) {
+  const w = Math.max(1, width), h = Math.max(1, height);
+  // Fit the shorter side, with room for the header and bottom controls.
+  // Zoom remains a distance, so changing orientation keeps the same location.
+  const usable = Math.max(Math.min(w, h) * 0.4, Math.min(w - 40, h - 132));
+  const fraction = Math.min(1, usable / Math.min(w, h));
+  camera.fovMode = w < h ? FreeCamera.FOVMODE_HORIZONTAL_FIXED : FreeCamera.FOVMODE_VERTICAL_FIXED;
+  camera.fov = 2 * Math.atan(1 / (2.7 * fraction));
+}
 
 export function createPlanetScene(engine, { environment = true } = {}) {
   const scene = new Scene(engine);
@@ -28,7 +40,7 @@ export function createPlanetScene(engine, { environment = true } = {}) {
   scene.clearColor = new Color4(0, 0, 0, 0);
   const camera = new FreeCamera('Camera', new Vector3(0, 0, INITIAL_VIEW.distance), scene);
   camera.setTarget(Vector3.Zero());
-  camera.fov = 2 * Math.atan(1 / 2.7);
+  framePlanet(camera, engine.getRenderWidth(), engine.getRenderHeight());
   camera.minZ = 0.05;
   camera.maxZ = 30;
   camera.inputs.clear();
@@ -60,7 +72,7 @@ export function createPlanetScene(engine, { environment = true } = {}) {
   let environmentReady = false;
   let env = null;
   if (environment) {
-    env = new HDRCubeTexture('./assets/afternoon-sky.hdr', scene, 128, false, true, false, true,
+    env = new HDRCubeTexture('./assets/coastal-sky-v0.4.hdr', scene, 256, false, true, false, true,
       () => { environmentReady = true; },
       () => {
         environmentReady = true;
@@ -70,7 +82,7 @@ export function createPlanetScene(engine, { environment = true } = {}) {
     scene.environmentTexture = env;
   }
 
-  const air = CreateSphere('Atmosphere', { diameter: 2.045, segments: 48, sideOrientation: Mesh.BACKSIDE }, scene);
+  const air = CreateSphere('Atmosphere', { diameter: 2.05, segments: 64, sideOrientation: Mesh.BACKSIDE }, scene);
   air.isPickable = false;
   const airMaterial = new ShaderMaterial('Atmosphere scattering', scene, {
     vertexSource: `precision highp float;
@@ -116,7 +128,7 @@ export function createPlanetScene(engine, { environment = true } = {}) {
   };
 }
 
-export async function loadPlanet(model, source = './assets/planet.glb') {
+export async function loadPlanet(model, source = './assets/planet-v0.4.glb') {
   const result = await ImportMeshAsync(source, model.scene, { pluginExtension: '.glb' });
   for (const mesh of result.meshes) {
     if (!mesh.parent) mesh.parent = model.root;
@@ -130,6 +142,10 @@ export async function loadPlanet(model, source = './assets/planet.glb') {
       if (mesh.name === 'Ocean') {
         mesh.material.roughness = 0.26;
         mesh.material.metallicF0Factor = 0.56;
+        model.oceanSurface = new OceanSurface(mesh.material);
+      } else if (mesh.name === 'Land') {
+        mesh.material.roughness = 0.94;
+        model.landSurface = new LandSurface(mesh.material);
       }
     }
   }

@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { access } from 'node:fs/promises';
 
-const file = resolve(process.argv[2] || 'authoring/pixel-earth-v0.3.blend');
+const file = resolve(process.argv[2] || 'authoring/pixel-earth-v0.4.blend');
 await access(file);
 const binary = process.env.BLENDER_BIN || 'blender';
 const child = spawn(binary, ['--background', file, '--python', resolve('scripts/export-from-blender.py')], { stdio: 'inherit' });

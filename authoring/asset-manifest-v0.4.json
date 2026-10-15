@@ -1,0 +1,26 @@
+{
+  "version": "0.4.0",
+  "generator": "Blender 4.0.2",
+  "geometry": {
+    "Land": {
+      "vertices": 41905,
+      "polygons": 41472
+    },
+    "Ocean": {
+      "vertices": 18721,
+      "polygons": 18432
+    }
+  },
+  "land_coverage": {
+    "method": "20000 equal-area Fibonacci directions",
+    "fraction": 0.4808
+  },
+  "source": "authoring/pixel-earth-v0.4.blend",
+  "runtime": "dist/assets/planet-v0.4.glb",
+  "environment": "dist/assets/coastal-sky-v0.4.hdr",
+  "asset_origin": {
+    "geometry": "Original procedural terrain",
+    "sky": "Poly Haven CC0; see docs/ASSETS.md"
+  },
+  "note": "Blender reference differs from runtime waves; not a browser screenshot. v0.3 source and assets retained."
+}

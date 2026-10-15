@@ -1,0 +1,44 @@
+{
+  "version": "0.4.0",
+  "engine": "Babylon.js 9.30.0",
+  "meshes": {
+    "Land": {
+      "vertices": 41903,
+      "triangles": 82368,
+      "minRadius": 0.9385176851671743,
+      "maxRadius": 1.016935648962969,
+      "material": "PBRMaterial",
+      "roughness": 0.8999999761581421,
+      "maxSeamNormalAngleDegrees": 0,
+      "receivesShadows": true
+    },
+    "Ocean": {
+      "vertices": 18719,
+      "triangles": 36480,
+      "minRadius": 0.9999999618764057,
+      "maxRadius": 1.000000038125435,
+      "material": "PBRMaterial",
+      "roughness": 0.2,
+      "maxSeamNormalAngleDegrees": 0,
+      "receivesShadows": true
+    }
+  },
+  "landCoverage": {
+    "fraction": 0.47882042935697966,
+    "method": "solid-angle weighted exported mesh triangles; coastal triangles classified by mean radius"
+  },
+  "checks": [
+    "actual glTF import",
+    "finite geometry and outward normals",
+    "continuous normals at seams and poles",
+    "real terrain relief and round ocean",
+    "separate PBR materials and seamless 3D ocean wave plugin",
+    "animated uniform cached-material binding",
+    "shadow caster and receivers",
+    "HDR decoding and six cube faces",
+    "lighting presets and sun direction",
+    "camera limits and reset",
+    "DOM IDs and local resources"
+  ],
+  "verification": "Bundled Babylon.js code checked with Node NullEngine. No browser WebGL, GUI, screenshot, or device performance test."
+}
