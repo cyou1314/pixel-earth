@@ -6,6 +6,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "node scripts/run-checks.mjs",
+    "import:standalone": "python3 scripts/import-standalone.py",
     "export:scene": "node scripts/export-scene.mjs"
   },
   "dependencies": {

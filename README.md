@@ -30,6 +30,28 @@ npm run check
 
 构建后的 dist/ 可以由普通静态服务器托管。引擎、模型与环境贴图均在站点本地，不使用第三方运行 CDN。
 
+## 导入提供的 v0.5 单文件页面
+
+仓库已加入所提供的 HTML 拆分流程。当前尚未提供完整的 `pixel-earth.html`，因此实际网页仍为 v0.4.1；打包脚本本身不包含立方球地形、河流、云层或摄像头手势的实现。
+
+将完整页面放到仓库根目录的 `pixel-earth.html` 后运行：
+
+```bash
+npm run build
+npm run check
+```
+
+也可从指定路径导入，脚本会将该页面保留为仓库根目录的制作源文件：
+
+```bash
+npm run import:standalone -- /绝对路径/pixel-earth.html
+npm run check
+```
+
+导入会生成 `dist/index.html`、`style.css`、`app.js`、`world.js`、`boot.js` 和 `build.json`，同步根目录版本为 0.5.0，并让 Git 跟踪 `dist/app.js`。写入前检查原文件、页面结构和 JavaScript 语法；这些检查失败时保留现有页面。`.openai/hosting.json` 与历史资产继续保留。
+
+后续构建会继续从完整 HTML 生成页面，避免旧 Babylon 构建覆盖新版本。如果已有 v0.5 产物却缺少原始 HTML，构建会报错。v0.5 的 `npm run check` 只验证语法与导入一致性，不代表 WebGL、河流、云层或真人手势已验收。
+
 ## 可编辑工程
 
 - authoring/pixel-earth-v0.4.blend：当前 Blender 源工程，包含相机、太阳、环境、陆地和海洋。

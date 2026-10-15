@@ -1,6 +1,9 @@
 import { build } from 'esbuild';
 import { mkdir } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
+import { usesStandalonePage, runStandaloneImport } from './runtime-mode.mjs';
+
+if (await usesStandalonePage()) process.exit(runStandaloneImport(['--check']));
 
 // Exercise the same package tree-shaking rules used for the browser build.
 await mkdir('.qa', { recursive: true });

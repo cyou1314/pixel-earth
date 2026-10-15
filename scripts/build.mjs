@@ -1,6 +1,9 @@
 import { build } from 'esbuild';
 import { access, copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
+import { usesStandalonePage, runStandaloneImport } from './runtime-mode.mjs';
+
+if (await usesStandalonePage()) process.exit(runStandaloneImport());
 
 for (const file of ['dist/assets/planet-v0.4.glb', 'dist/assets/coastal-sky-v0.4.hdr']) {
   await access(file, constants.R_OK);
