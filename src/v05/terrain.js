@@ -2,7 +2,10 @@
 export const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 export const mix = (a, b, t) => a * (1 - t) + b * t;
 export const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
-export const normalize = p => { const r = Math.hypot(...p); return p.map(x => x / r); };
+export const normalize = (p, fallback = [1, 0, 0]) => {
+  const r = Math.hypot(p[0], p[1], p[2]);
+  return r > 1e-12 ? [p[0] / r, p[1] / r, p[2] / r] : fallback.slice();
+};
 export const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
 const fract = x => x - Math.floor(x);
 function hash(x, y, z) {
@@ -67,15 +70,36 @@ export function cubeSphere(resolution=64, land=true, radius=1) {
     const offset=positions.length/3, stride=resolution+1;
     for (let j=0;j<=resolution;j++) for(let i=0;i<=resolution;i++) {
       const n=normalize(face(i/resolution*2-1,j/resolution*2-1));
-      const key=n.map(x=>x.toFixed(9)).join(',');
-      let id=unique.get(key);
-      if(id===undefined) {
-        id=samples.length; unique.set(key,id);
-        const data=surface(n);
-        samples.push({n,...data,normal:land?terrainNormal(n,data):n,neighbors:new Set()});
+      if (land) {
+        // Only cube-face border vertices can be shared between faces; interior
+        // vertices are unique by construction, so only borders need dedup.
+        // Integer-quantized keys avoid per-vertex string allocations.
+        const border=i===0||i===resolution||j===0||j===resolution;
+        const key=border?Math.round(n[0]*1e6)+','+Math.round(n[1]*1e6)+','+Math.round(n[2]*1e6):null;
+        let id=key===null?undefined:unique.get(key);
+        if (id===undefined) {
+          id=samples.length;
+          if (key!==null) unique.set(key,id);
+          const data=surface(n);
+          samples.push({n,...data,normal:terrainNormal(n,data),neighbors:new Set()});
+        }
+        const s=samples[id], r=1+s.height;
+        positions.push(n[0]*r,n[1]*r,n[2]*r);
+        normals.push(s.normal[0],s.normal[1],s.normal[2]);
+        const c=color(n,s,true);
+        colors.push(c[0],c[1],c[2],c[3]);
+        ids.push(id);
+      } else {
+        // Ocean and cloud shells need no shared topology: their vertices are
+        // final as generated. The ocean still needs the coast value for shelf
+        // coloring; cloud vertex colors are unused (the cloud ShaderMaterial
+        // computes its own appearance), so clouds skip the noise field entirely.
+        const data=radius===1?surface(n):{coast:-1,height:0,upland:0};
+        positions.push(n[0]*radius,n[1]*radius,n[2]*radius);
+        normals.push(n[0],n[1],n[2]);
+        const c=color(n,data,false);
+        colors.push(c[0],c[1],c[2],c[3]);
       }
-      const s=samples[id], r=land?1+s.height:radius;
-      positions.push(...n.map(x=>x*r)); normals.push(...s.normal); colors.push(...color(n,s,land)); ids.push(id);
     }
     for(let j=0;j<resolution;j++) for(let i=0;i<resolution;i++) {
       const a=offset+j*stride+i,b=a+1,c=a+stride,d=c+1;
@@ -119,21 +143,44 @@ export function drainage(samples, threshold=70) {
 function catmull(a,b,c,d,t){return a.map((v,k)=>.5*((2*b[k])+(-v+c[k])*t+(2*v-5*b[k]+4*c[k]-d[k])*t*t+(-v+3*b[k]-3*c[k]+d[k])*t*t*t));}
 export function riverGeometry(samples, network) {
   const positions=[],normals=[],indices=[];
+  let lastSide=[1,0,0];
   for(const path of network.paths){
-    const centers=[],widths=[];
+    const centers=[],widths=[],heights=[],centerNormals=[];
     for(let j=0;j<path.length-1;j++)for(let k=0;k<3;k++){
-      centers.push(normalize(catmull(samples[path[Math.max(0,j-1)]].n,samples[path[j]].n,samples[path[j+1]].n,samples[path[Math.min(path.length-1,j+2)]].n,k/3)));
+      const t=k/3;
+      centers.push(normalize(catmull(samples[path[Math.max(0,j-1)]].n,samples[path[j]].n,samples[path[j+1]].n,samples[path[Math.min(path.length-1,j+2)]].n,t)));
+      // Reuse the drainage samples' heights instead of re-evaluating the noise field per bank vertex.
+      const h0=samples[path[j]].height,h1=samples[path[j+1]].height;
+      heights.push(h0+(h1-h0)*t);
+      centerNormals.push(samples[path[j]].normal);
       widths.push(Math.min(.0048,.0014+.0038*Math.sqrt(network.accumulation[path[j]]/1200)));
     }
     centers.push(samples[path.at(-1)].n);widths.push(widths.at(-1));
-    const offset=positions.length/3;
+    heights.push(samples[path.at(-1)].height);centerNormals.push(samples[path.at(-1)].normal);
+    const offset=positions.length/3,last=centers.length-1;
     centers.forEach((n,j)=>{
-      const previous=centers[Math.max(0,j-1)],next=centers[Math.min(centers.length-1,j+1)];
-      const side=normalize(cross(n,next.map((x,k)=>x-previous[k])));
+      const previous=centers[Math.max(0,j-1)],next=centers[Math.min(last,j+1)];
+      const tangent=next.map((x,k)=>x-previous[k]);
+      let side=cross(n,tangent);
+      const len=Math.hypot(side[0],side[1],side[2]);
+      // Degenerate tangents (coincident samples) would normalize to NaN and
+      // corrupt the whole strip; fall back to the last valid side vector.
+      if(len>1e-9){side=[side[0]/len,side[1]/len,side[2]/len];lastSide=side;}
+      else side=lastSide;
+      // Ease into the sea over the last 3 samples: fade the lift and fan out
+      // slightly so the mouth reads as a delta instead of a hard cut.
+      const mouth=j>=last-2?(last-j)/2:1;
+      const lift=.0002+.0006*mouth, w=widths[j]*(1+(1-mouth)*.6);
+      const sn=centerNormals[j];
       for(const sign of [-1,1]){
-        const bank=normalize(n.map((x,k)=>x+side[k]*widths[j]*sign));
-        const r=1+Math.max(0,surface(bank).height)+.0008;
-        positions.push(...bank.map(x=>x*r));normals.push(...bank);
+        const bank=normalize(n.map((x,k)=>x+side[k]*w*sign));
+        const r=1+Math.max(0,heights[j])+lift;
+        positions.push(bank[0]*r,bank[1]*r,bank[2]*r);
+        // Blend the valley's terrain normal with the sphere normal so water
+        // speculars follow the terrain instead of looking shrink-wrapped.
+        const nx=bank[0]*.65+sn[0]*.35,ny=bank[1]*.65+sn[1]*.35,nz=bank[2]*.65+sn[2]*.35;
+        const nl=Math.hypot(nx,ny,nz)||1;
+        normals.push(nx/nl,ny/nl,nz/nl);
       }
       if(j>0){const a=offset+(j-1)*2;indices.push(a,a+2,a+1,a+1,a+2,a+3);}
     });
