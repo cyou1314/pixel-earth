@@ -4,11 +4,14 @@ import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial.js';
 import { Material } from '@babylonjs/core/Materials/material.js';
 import { ShaderMaterial } from '@babylonjs/core/Materials/shaderMaterial.js';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
-import { Color3 } from '@babylonjs/core/Maths/math.js';
+import { Color3, Vector3 } from '@babylonjs/core/Maths/math.js';
 import { createPlanetScene } from '../scene.js';
 import { OceanSurface } from '../ocean.js';
 import { PixelSurface } from './pixel-material.js';
 import { cubeSphere, drainage, riverGeometry } from './terrain.js';
+
+// Reused across frames so the render loop allocates no throwaway vectors.
+const sunDir = new Vector3();
 
 function meshFrom(name,data,scene){
   const mesh=new Mesh(name,scene), vertices=new VertexData();
@@ -49,10 +52,15 @@ export function createCubeWorld(engine,{environment=true,resolution=64}={}){
         return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
           mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
       void main(){vec3 n=normalize(cloudLocal);vec3 p=normalize(floor(n*128.0+0.5))*7.5;
-        float density=noise(p+vec3(4,8,2))*0.72+noise(p*2.7+9.0)*0.28;
-        float alpha=smoothstep(0.64,0.82,density)*0.72;
         float facing=max(0.0,dot(normalize(cloudWorld),normalize(eye-cloudWorld)));
-        alpha*=smoothstep(0.0,0.2,facing);
+        float edgeFade=smoothstep(0.0,0.2,facing);
+        if(edgeFade<0.01)discard;
+        float n1=noise(p+vec3(4,8,2));
+        // Early-out: even with the second octave at full strength this texel
+        // stays below the cover threshold, so skip the remaining work.
+        if(n1*0.72+0.28<0.64)discard;
+        float density=n1*0.72+noise(p*2.7+9.0)*0.28;
+        float alpha=smoothstep(0.64,0.82,density)*0.72*edgeFade;
         if(alpha<0.012)discard;
         float light=smoothstep(-0.55,0.8,dot(normalize(cloudWorld),sunDirection));
         gl_FragColor=vec4(mix(vec3(0.67,0.76,0.79),vec3(0.98,0.98,0.91),light),alpha);}`
@@ -62,10 +70,20 @@ export function createCubeWorld(engine,{environment=true,resolution=64}={}){
   model.update=(view,light,time=0)=>{
     updateBase(view,light);
     cloudRoot.rotation.y=time*.009;
-    cloudMaterial.setVector3('sunDirection',model.sun.direction.negate());
-    cloudMaterial.setVector3('eye',model.camera.position);
+    model.sun.direction.scaleToRef(-1, sunDir);
+    cloudMaterial.setVector3('sunDirection', sunDir);
+    cloudMaterial.setVector3('eye', model.camera.position);
     model.oceanSurface.time=time;
   };
+  // Static geometry: skip per-frame bounding-info sync and frustum culling.
+  // The globe is always centered, so these meshes are always rendered.
+  for (const mesh of [land, ocean, rivers, clouds]) {
+    mesh.doNotSyncBoundingInfo = true;
+    mesh.alwaysSelectAsActiveMesh = true;
+  }
+  // The drainage neighbor graph served its purpose during the build;
+  // release the sets so they don't linger on the heap.
+  for (const s of terrain.samples) s.neighbors = null;
   Object.assign(model,{land,ocean,rivers,clouds,terrain,network});
   return model;
 }
