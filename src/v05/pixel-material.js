@@ -11,7 +11,14 @@ export class PixelSurface extends MaterialPluginBase {
       CUSTOM_FRAGMENT_DEFINITIONS:`varying vec3 vPixelPosition;
         float pixelHash(vec3 p){p=fract(p*0.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}`,
       CUSTOM_FRAGMENT_BEFORE_LIGHTS:`
-        vec3 pixelP=normalize(vPixelPosition)*192.0;
+        // Quantize on the cube-face projection instead of raw 3D voxels so the
+        // pixel grid keeps a uniform texel size everywhere on the sphere
+        // (the naive 3D floor() stretches texels where the voxel grid meets
+        // the surface at a shallow angle).
+        vec3 nPos=normalize(vPixelPosition);
+        vec3 aPos=abs(nPos);
+        float maxAxis=max(aPos.x,max(aPos.y,aPos.z));
+        vec3 pixelP=(nPos/maxAxis)*128.0;
         float footprint=max(length(dFdx(pixelP)),length(dFdy(pixelP)));
         float detail=(pixelHash(floor(pixelP))-0.5)*(1.0-smoothstep(0.8,2.0,footprint));
         vec3 palette=floor(surfaceAlbedo*60.0+0.5)/60.0;
