@@ -7,4 +7,9 @@ node_modules/
 .openai/preview.json
 .openai/state/
 .openai/local/
+dist/app.js
+dist/app.js.LEGAL.txt
+authoring/*.blend1
+authoring/exports/
+.qa/
 

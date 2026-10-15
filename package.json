@@ -1,0 +1,18 @@
+{
+  "name": "pixel-earth",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/run-checks.mjs",
+    "export:scene": "node scripts/export-scene.mjs"
+  },
+  "dependencies": {
+    "@babylonjs/core": "9.30.0",
+    "@babylonjs/loaders": "9.30.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

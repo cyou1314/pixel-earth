@@ -1,5 +1,5 @@
 :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;color:#244359;background:#a8c3d5;font-synthesis:none}
-*{box-sizing:border-box}html,body,main{width:100%;height:100%;margin:0;overflow:hidden}body{min-width:240px}main{position:relative}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;outline:none}canvas:active{cursor:grabbing}canvas:focus-visible{outline:2px solid #eff8ff;outline-offset:-4px}
+*{box-sizing:border-box}html,body,main{width:100%;height:100%;margin:0;overflow:hidden}body{min-width:240px}main{position:relative;background:radial-gradient(ellipse at 18% 18%,#fff3d652,transparent 58%),linear-gradient(180deg,#83b1c9 0%,#b9d3df 64%,#d9e5e6 100%)}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;outline:none}canvas:active{cursor:grabbing}canvas:focus-visible{outline:2px solid #eff8ff;outline-offset:-4px}
 header{position:absolute;top:max(30px,env(safe-area-inset-top));left:36px;pointer-events:none}h1{font-size:17px;line-height:1.3;letter-spacing:.14em;margin:0;font-weight:500}header p{font-size:11px;letter-spacing:.05em;margin:9px 0 0;opacity:.64}
 button{appearance:none;border:1px solid #ffffff4d;color:#244359;background:#e6eff433;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:0;display:grid;place-items:center;cursor:pointer;transition:background .18s,transform .18s;touch-action:manipulation}
 button:hover{background:#f3f7fa77}button:active{transform:scale(.94)}button:focus-visible{outline:2px solid #244359;outline-offset:4px}
@@ -20,3 +20,5 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke
 @media(max-width:600px){header{left:22px;top:24px}.reset{right:20px;top:22px}.light-toggle{right:65px;top:22px}.lighting-panel{right:20px;top:70px}.controls{bottom:22px}header p{font-size:10px}}
 @media(prefers-reduced-motion:reduce){button{transition:none}}
 
+
+.comparison-link{display:block;text-align:center;font-size:10px;color:#647e8b;text-decoration:none;padding-top:13px;margin-top:10px;border-top:1px solid #24435910}.comparison-link:hover{color:#244359}#error a{color:#244359}

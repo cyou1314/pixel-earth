@@ -1,0 +1,19 @@
+{
+  "version": "0.3.0",
+  "generator": "Blender 4.0.2",
+  "geometry": {
+    "Land": {
+      "vertices": 13041,
+      "polygons": 12800
+    },
+    "Ocean": {
+      "vertices": 4753,
+      "polygons": 4608
+    }
+  },
+  "source": "authoring/pixel-earth-v0.3.blend",
+  "runtime": "dist/assets/planet.glb",
+  "environment": "dist/assets/afternoon-sky.hdr",
+  "asset_origin": "Original assets created for Pixel Earth",
+  "note": "Original procedural assets. Blender reference rendering is not a browser screenshot."
+}
