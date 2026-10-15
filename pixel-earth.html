@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7faec8">
+<title>小地球 · Pixel Earth v0.5</title>
+<style>
+:root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;color:#244359;background:#a8c3d5;font-synthesis:none;color-scheme:light}
+*{box-sizing:border-box}
+html,body,main{width:100%;height:100%;margin:0;overflow:hidden}
+body{min-width:240px}
+main{position:relative;height:100dvh;background:radial-gradient(ellipse at 18% 18%,#fff3d652,transparent 58%),linear-gradient(180deg,#83b1c9 0%,#b9d3df 64%,#d9e5e6 100%)}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab;outline:none;opacity:0;transition:opacity .45s}
+.is-ready canvas{opacity:1}
+canvas.is-dragging{cursor:grabbing}
+canvas:focus-visible{outline:2px solid #244359;outline-offset:-5px}
+header{position:absolute;top:calc(30px + env(safe-area-inset-top));left:calc(32px + env(safe-area-inset-left));pointer-events:none}
+h1{font-size:20px;line-height:1.3;letter-spacing:.12em;margin:0;font-weight:500}
+header p{font-size:12px;line-height:1.6;letter-spacing:.04em;margin:8px 0 0;color:#3c5c70}
+button{appearance:none;font:inherit;border:1px solid #ffffff7a;color:#244359;background:#eef5f761;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:0;display:grid;place-items:center;cursor:pointer;transition:background .18s,transform .18s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:active:not(:disabled){transform:scale(.95)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid #244359;outline-offset:4px}
+svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.reset,.light-toggle{position:absolute;top:calc(26px + env(safe-area-inset-top));width:44px;height:44px;border-radius:50%;box-shadow:0 2px 12px #24435905}
+.reset{right:calc(28px + env(safe-area-inset-right))}
+.light-toggle{right:calc(82px + env(safe-area-inset-right))}
+.light-toggle[aria-expanded=true]{background:#f1f7fbe6;border-color:#fff}
+.lighting-panel{position:absolute;z-index:2;right:calc(28px + env(safe-area-inset-right));top:calc(84px + env(safe-area-inset-top));width:302px;max-width:calc(100% - 32px);max-height:calc(100dvh - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain;padding:13px 21px 15px;border:1px solid #ffffffd6;border-radius:20px;background:#f3f8fbf5;box-shadow:0 14px 44px #2443591a;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.panel-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.panel-heading h2{margin:0;font-weight:500;letter-spacing:.04em;font-size:15px}
+.panel-heading button{width:44px;height:44px;margin-right:-10px;border:0;background:transparent;border-radius:50%}
+.panel-heading svg{width:17px;height:17px}
+.light-presets{display:flex;gap:4px;background:#dce8ef99;border-radius:12px;padding:4px;margin-bottom:19px}
+.light-presets button{flex:1;min-height:40px;border:0;border-radius:9px;background:transparent;font-size:13px;color:#496576}
+.light-presets button[aria-pressed=true]{background:#fff;box-shadow:0 1px 5px #24435912;color:#23465b}
+.light-field{display:grid;grid-template-columns:1fr auto;gap:5px 6px;font-size:13px;margin:0 0 13px}
+.light-field output{color:#526d7c;font-size:12px;font-variant-numeric:tabular-nums}
+.light-field input{grid-column:1/-1;width:100%;height:28px;margin:0;accent-color:#557f94;cursor:pointer}
+.light-field input:focus-visible{outline:2px solid #557f94;outline-offset:3px;border-radius:8px}
+.sun-position{border-top:1px solid #24435914;padding-top:2px;margin-top:1px}
+.sun-position summary{cursor:pointer;font-size:12px;color:#4d6b7e;padding:13px 0;min-height:44px}
+.sun-position .light-field:last-child{margin-bottom:6px}
+.lighting-reset{width:100%;min-height:44px;border:0;border-radius:9px;background:transparent;color:#526d7c;font-size:12px}
+.comparison-link{display:flex;align-items:center;justify-content:center;min-height:44px;font-size:12px;color:#526d7c;text-decoration:none;margin-top:4px;border-top:1px solid #24435914}
+.controls{position:absolute;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:5px;border-radius:30px;border:1px solid #ffffff8c;background:#eef5f773;box-shadow:0 4px 20px #24435908;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.controls button{width:44px;height:44px;background:transparent;border:0;border-radius:50%}
+.controls output{width:57px;text-align:center;font-size:12px;letter-spacing:.02em;color:#3c5c70;font-variant-numeric:tabular-nums;pointer-events:none}
+.status-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:320px;max-width:calc(100% - 40px);padding:26px 24px;border:1px solid #ffffff96;border-radius:20px;background:#eef5f7e8;box-shadow:0 12px 40px #2443590d;text-align:center;line-height:1.7;font-size:13px}
+.status-card h2,.status-card .status-title{margin:0 0 7px;font-weight:500;font-size:16px;color:#244359}
+.status-card p{margin:0 0 15px;color:#526d7c}
+.status-card a{display:block;min-height:44px;padding:10px 4px;color:#3b6178;text-underline-offset:4px;font-size:12px}
+.status-card button{width:100%;min-height:44px;border-radius:11px;background:#fff9;margin-top:18px;font-size:13px}
+.loading-orbit{display:block;width:34px;height:34px;margin:0 auto 19px;border:1.5px solid #557f9433;border-top-color:#557f94;border-radius:50%;animation:orbit 1.6s linear infinite}
+@keyframes orbit{to{transform:rotate(360deg)}}
+[hidden]{display:none!important}
+@media(hover:hover){button:hover:not(:disabled){background:#f7fafbc7}.controls button:hover:not(:disabled){background:#fff8}.comparison-link:hover{color:#244359;text-decoration:underline;text-underline-offset:4px}}
+@media(max-width:600px){header{left:calc(22px + env(safe-area-inset-left));top:calc(24px + env(safe-area-inset-top))}h1{font-size:18px}header p{font-size:11px;letter-spacing:0}.reset{right:calc(18px + env(safe-area-inset-right))}.light-toggle{right:calc(70px + env(safe-area-inset-right))}.reset,.light-toggle{top:calc(21px + env(safe-area-inset-top))}.lighting-panel{right:calc(16px + env(safe-area-inset-right));top:calc(78px + env(safe-area-inset-top))}.controls{bottom:calc(22px + env(safe-area-inset-bottom))}}
+@media(max-width:340px){header{left:16px}header p{max-width:130px;font-size:10px}.reset{right:12px}.light-toggle{right:62px}}
+@media(max-height:500px) and (min-width:600px){header{top:calc(18px + env(safe-area-inset-top))}.reset,.light-toggle{top:calc(16px + env(safe-area-inset-top))}.lighting-panel{top:calc(70px + env(safe-area-inset-top));max-height:calc(100dvh - 84px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}.controls{bottom:calc(14px + env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){button,canvas{transition:none}.loading-orbit{animation:none}}
+
+.edition{display:inline-block;font-size:9px;letter-spacing:.12em;vertical-align:top;margin:3px 0 0 6px;color:#4a6b7e;font-weight:400}
+.cloud-toggle,.gesture-toggle{position:absolute;bottom:calc(32px + env(safe-area-inset-bottom));height:44px;border-radius:25px;display:flex;align-items:center;justify-content:center;gap:9px;padding:0 16px;font-size:12px}
+.cloud-toggle{left:calc(32px + env(safe-area-inset-left))}.gesture-toggle{right:calc(28px + env(safe-area-inset-right))}
+.cloud-toggle[aria-pressed=true],.gesture-toggle[aria-pressed=true]{background:#f1f7fba6;border-color:#fff9}
+.gesture-panel{position:absolute;z-index:3;right:calc(28px + env(safe-area-inset-right));bottom:calc(102px + env(safe-area-inset-bottom));width:300px;max-width:calc(100% - 32px);max-height:calc(100dvh - 126px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain;border:1px solid #fffc;border-radius:20px;background:#f3f8fbf5;box-shadow:0 14px 44px #2443591a;padding:10px 18px 16px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.gesture-panel .panel-heading{margin:0}.gesture-panel h2{font-size:14px}
+#gesture-status{font-size:12px;color:#456779;margin:3px 0 12px;min-height:36px;line-height:1.5}
+.camera-frame{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:11px;background:linear-gradient(145deg,#365363,#203944)}
+.camera-frame video,.camera-frame canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);opacity:1;pointer-events:none;cursor:default}
+.gesture-panel[data-active=false] .camera-frame video,.gesture-panel[data-active=false] .camera-frame canvas{opacity:0}
+.gesture-instructions{font-size:12px;line-height:1.9;margin:13px 0 9px;color:#244359}.camera-privacy{font-size:11px;line-height:1.7;margin:0;color:#526d7c;padding-top:10px;border-top:1px solid #24435914}
+@media(max-width:600px){.tool-label{display:none}.cloud-toggle,.gesture-toggle{width:44px;padding:0;bottom:calc(28px + env(safe-area-inset-bottom))}.cloud-toggle{left:calc(18px + env(safe-area-inset-left))}.gesture-toggle{right:calc(18px + env(safe-area-inset-right))}.gesture-panel{right:calc(16px + env(safe-area-inset-right));bottom:calc(96px + env(safe-area-inset-bottom))}}
+@media(max-height:500px) and (min-width:600px){.cloud-toggle,.gesture-toggle{bottom:calc(20px + env(safe-area-inset-bottom))}.gesture-panel{bottom:calc(82px + env(safe-area-inset-bottom));max-height:calc(100dvh - 100px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}}
+</style>
+</head>
+<body>
+<main aria-label="可交互的小地球" aria-busy="true">
+<canvas id="world" tabindex="-1" aria-describedby="hint" aria-label="三维小地球。拖动旋转，滚轮缩放，也可使用方向键和加减键。"></canvas>
+<header><h1>小地球 <span class="edition">05</span></h1><p id="hint">拖动旋转 · 滚轮缩放</p></header>
+<button class="light-toggle" id="lighting-control" type="button" data-scene-control disabled aria-label="调整光照" aria-expanded="false" aria-controls="lighting-panel" title="调整光照"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+<button class="reset" id="reset" type="button" data-scene-control disabled aria-label="回到初始视角" title="回到初始视角（Home）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9a7 7 0 1 1-.3 5M5 4v5h5"/></svg></button>
+<section id="lighting-panel" class="lighting-panel" aria-labelledby="lighting-title" hidden>
+<div class="panel-heading"><h2 id="lighting-title">光照</h2><button id="lighting-close" type="button" aria-label="关闭光照设置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+<div class="light-presets" role="group" aria-label="光照预设"><button type="button" data-preset="day" aria-pressed="true">晴日</button><button type="button" data-preset="warm" aria-pressed="false">暖阳</button><button type="button" data-preset="side" aria-pressed="false">侧光</button></div>
+<label class="light-field" for="light-sun"><span>日照强度</span><output id="light-sun-value" for="light-sun">135%</output><input id="light-sun" type="range" min="0" max="200" value="135" step="1" data-light="sun" data-unit="%"></label>
+<label class="light-field" for="light-fill"><span>暗部补光</span><output id="light-fill-value" for="light-fill">55%</output><input id="light-fill" type="range" min="0" max="100" value="55" step="1" data-light="fill" data-unit="%"></label>
+<label class="light-field" for="light-brightness"><span>整体亮度</span><output id="light-brightness-value" for="light-brightness">110%</output><input id="light-brightness" type="range" min="70" max="150" value="110" step="1" data-light="brightness" data-unit="%"></label>
+<details class="sun-position"><summary>太阳位置</summary>
+<label class="light-field" for="light-azimuth"><span>方向</span><output id="light-azimuth-value" for="light-azimuth">32°</output><input id="light-azimuth" type="range" min="-150" max="150" value="32" step="1" data-light="azimuth" data-unit="°"></label>
+<label class="light-field" for="light-elevation"><span>高度</span><output id="light-elevation-value" for="light-elevation">42°</output><input id="light-elevation" type="range" min="10" max="80" value="42" step="1" data-light="elevation" data-unit="°"></label>
+</details>
+<button class="lighting-reset" id="lighting-reset" type="button">恢复默认光照</button>
+<a class="comparison-link" href="./foundation/">查看基础版对照</a>
+</section>
+<button id="cloud-control" class="cloud-toggle" type="button" data-scene-control disabled aria-label="显示或隐藏云层" aria-pressed="true" title="显示或隐藏云层"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17a4 4 0 0 1-.7-7.9A5.5 5.5 0 0 1 17 8a4.5 4.5 0 0 1 0 9Z"/></svg><span class="tool-label">薄云</span></button>
+<button id="gesture-control" class="gesture-toggle" type="button" data-scene-control disabled aria-label="开启或关闭摄像头手势" aria-pressed="false" aria-expanded="false" aria-controls="gesture-panel" title="摄像头手势"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 12V5a1.3 1.3 0 0 1 2.6 0v6M10.6 10V3.8a1.3 1.3 0 0 1 2.6 0V11M13.2 10V5a1.3 1.3 0 0 1 2.6 0v7M15.8 10V8a1.3 1.3 0 0 1 2.6 0v7c0 4-2.2 6-5.8 6-2.6 0-4.1-1-5.7-3.2L4 13.7a1.4 1.4 0 0 1 2-1.9L8 14"/></svg><span class="tool-label">摄像头手势</span></button>
+<section id="gesture-panel" class="gesture-panel" aria-labelledby="gesture-title" hidden>
+<div class="panel-heading"><h2 id="gesture-title">用手靠近小地球</h2><button id="gesture-close" type="button" aria-label="关闭手势与摄像头"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+<p id="gesture-status" role="status" aria-live="polite">正在开启摄像头…</p>
+<div class="camera-frame"><video id="camera-video" autoplay muted playsinline aria-label="本机摄像头预览"></video><canvas id="hand-preview" width="320" height="240" aria-hidden="true"></canvas></div>
+<p class="gesture-instructions">张掌移动，旋转地球<br>捏合后前后移动，拉近或推远<br>握拳暂停</p>
+<p class="camera-privacy">画面只在本机处理，不上传。关闭面板或切到后台会关闭摄像头。</p>
+</section>
+<nav class="controls" aria-label="视野">
+<button id="out" type="button" data-scene-control disabled aria-label="缩小" title="缩小（−）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+<output id="zoom-value" aria-label="相对初始视角的放大比例">100%</output>
+<button id="in" type="button" data-scene-control disabled aria-label="放大" title="放大（+）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12"/></svg></button>
+</nav>
+<div id="loading" class="status-card" role="status">
+<span class="loading-orbit" aria-hidden="true"></span>
+<p class="status-title">正在加载小地球</p>
+<p id="loading-detail">正在准备陆地与海洋</p>
+<a href="./foundation/">打开基础版</a>
+</div>
+<div id="error" class="status-card" role="alert" hidden>
+<h2>小地球暂时没有显示</h2>
+<p id="error-message">画面加载失败，请重新加载，或先打开基础版。</p>
+<button id="retry" type="button">重新加载</button>
+<a href="./foundation/">打开基础版</a>
+</div>
+<noscript><div class="status-card">请启用 JavaScript，查看三维小地球。</div></noscript>
+</main><script type="module">
+document.querySelector('#retry').addEventListener('click', () => location.reload());
+try {
+  const { startPlanet } = await import('./engine-v0.5.js');
+  await startPlanet();
+} catch (error) {
+  console.error('Planet startup:', error);
+  document.querySelector('#loading').hidden = true;
+  document.querySelector('main').setAttribute('aria-busy', 'false');
+  document.querySelector('#hint').textContent = '小地球暂时没有显示';
+  document.querySelector('#error-message').textContent = '画面没有加载成功，请重新加载。';
+  document.querySelector('#error').hidden = false;
+}
+</script>
+</body>
+</html>

@@ -7,9 +7,15 @@ import ctypes as C
 import ctypes.util
 import json
 import re
+import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--v05', action='store_true', help='Check all five v0.5 shader programs')
+args = parser.parse_args()
+shader_directory = ROOT / ('.qa/v05-shaders' if args.v05 else '.qa/shaders')
+report_path = ROOT / ('docs/previews/world-v0.5/shader-validation.json' if args.v05 else 'docs/previews/polish-v0.4.1/shader-validation.json')
 egl = C.CDLL(ctypes.util.find_library("EGL"))
 gl = C.CDLL(ctypes.util.find_library("GL"))
 P, I, U = C.c_void_p, C.c_int, C.c_uint
@@ -54,10 +60,10 @@ try:
         return shader
 
     report = {"context": "surfaceless EGL desktop OpenGL, not browser WebGL", "programs": {}}
-    for name in ("Land", "Ocean"):
+    for name in (('Land', 'Ocean', 'Rivers', 'Clouds', 'Atmosphere') if args.v05 else ('Land', 'Ocean')):
         program = api(gl, "glCreateProgram", U, [])()
         for ext, kind in (("vert", 0x8B31), ("frag", 0x8B30)):
-            shader = compile_shader(kind, (ROOT / ".qa/shaders" / f"{name}.{ext}").read_text())
+            shader = compile_shader(kind, (shader_directory / f"{name}.{ext}").read_text())
             api(gl, "glAttachShader", None, [U, U])(program, shader)
         api(gl, "glLinkProgram", None, [U])(program)
         ok = I()
@@ -68,7 +74,8 @@ try:
             raise RuntimeError(log.value.decode())
         report["programs"][name] = {"vertex_compile": "passed", "fragment_compile": "passed", "link": "passed"}
     report["adaptation"] = "Babylon WebGLShaderProcessor used in NullEngine; GLSL 330 compatibility, WebGL extension directives removed and EXT texture names mapped to core functions."
-    (ROOT / "docs/previews/polish-v0.4.1/shader-validation.json").write_text(json.dumps(report, indent=2) + "\n")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report))
 finally:
     api(egl, "eglTerminate", U, [P])(display)

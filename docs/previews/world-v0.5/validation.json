@@ -1,0 +1,48 @@
+{
+  "version": "0.5.0",
+  "renderer": "Babylon.js 9.30.0",
+  "meshes": {
+    "Land": {
+      "vertices": 25350,
+      "triangles": 49152,
+      "minRadius": 0.9387541405143851,
+      "maxRadius": 1.028912401353013
+    },
+    "Ocean": {
+      "vertices": 6534,
+      "triangles": 12288,
+      "minRadius": 0.9999999999999999,
+      "maxRadius": 1.0000000000000002
+    },
+    "Rivers": {
+      "vertices": 3116,
+      "triangles": 3084,
+      "minRadius": 1.0007999999999997,
+      "maxRadius": 1.0288302045672715
+    },
+    "Clouds": {
+      "vertices": 3750,
+      "triangles": 6912,
+      "minRadius": 1.0749999999999997,
+      "maxRadius": 1.0750000000000002
+    }
+  },
+  "landCoverage": 0.47950884669630084,
+  "rivers": 16,
+  "cubeFaceSeamDot": 0.9999999999999996,
+  "checks": [
+    "actual cube-sphere meshes and outward normals",
+    "seam continuity and area-weighted land/ocean coverage",
+    "priority-flood drainage with sea outlets",
+    "river strips above terrain and cloud shell",
+    "lighting, water time, cloud toggle and reset",
+    "six actual camera projections",
+    "five prepared shader programs including reflection branch",
+    "synthetic palm rotation, pinch zoom and loss/reacquisition",
+    "stub camera permission denial, live stream shutdown and cancellation while awaiting permission",
+    "cancellation and serialized restart during model initialization",
+    "local MediaPipe model, graph and WebAssembly assets",
+    "DOM bindings and unique IDs"
+  ],
+  "verification": "NullEngine does not render pixels. Synthetic landmarks and stub camera APIs do not verify a real camera or human gestures. Browser WebGL, CSS, device performance and real gesture recognition remain unverified."
+}

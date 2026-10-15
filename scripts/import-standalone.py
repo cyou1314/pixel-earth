@@ -42,6 +42,7 @@ def prepare(source):
         result = subprocess.run(["node", "--check", str(candidate)], capture_output=True, text=True)
         if result.returncode:
             raise ValueError("JavaScript 语法检查失败，尚未改动 dist/：\n" + result.stderr.strip())
+    engine_preload = '<link rel="modulepreload" href="./engine-v0.5.js">\n' if './engine-v0.5.js' in js else ''
     index = f"""<!doctype html>
 <html lang="zh-CN">
 <head>
@@ -49,8 +50,10 @@ def prepare(source):
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7faec8">
 <title>小地球 · Pixel Earth v0.5</title>
+<meta name="description" content="一颗拥有像素地形、河流和薄云的可交互小地球。">
 <link rel="stylesheet" href="./style.css">
 <link rel="modulepreload" href="./app.js">
+{engine_preload}\
 </head>
 <body>
 {body}
@@ -72,6 +75,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", nargs="?", type=Path, default=ROOT / "pixel-earth.html")
     parser.add_argument("--check", action="store_true", help="核验生成文件与完整页面一致，不写入文件")
+    parser.add_argument("--validate-source", action="store_true", help="只验证原始页面，不写入文件")
     arguments = parser.parse_args()
     source = arguments.source.resolve()
     if not source.is_file():
@@ -92,6 +96,9 @@ def main():
     except (OSError, ValueError) as error:
         parser.exit(1, str(error) + "\n")
     destination = ROOT / "dist"
+    if arguments.validate_source:
+        print("v0.5 页面结构与 JavaScript 语法检查通过。")
+        return
     if arguments.check:
         mismatched = [f"dist/{name}" for name, content in outputs.items()
                       if not (destination / name).is_file() or (destination / name).read_text(encoding="utf-8") != content]

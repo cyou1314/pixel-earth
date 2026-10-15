@@ -1,5 +1,14 @@
 # 资产来源与制作
 
+## v0.5 手势与程序世界
+
+- 新世界几何、排水网络与像素材质由 `src/v05/` 的确定性 JavaScript 生成，未使用外部生成素材；旧 Blender/GLB 资产继续保留。
+- 本机识别：[MediaPipe Hands](https://github.com/google-ai-edge/mediapipe)，npm 包 `@mediapipe/hands@0.4.1675469240`，Apache-2.0。
+- 构建从锁定的 npm 包复制 `hands.js`、图、轻量手部模型、打包数据、SIMD 与兼容 WebAssembly 文件到 `dist/assets/hands/`；模型复杂度设为 0，不请求全量模型。
+- 官方许可随站点在 `dist/licenses/mediapipe-Apache-2.0.txt`；依赖完整性记录在 `package-lock.json`。生成的引擎包与手势二进制不重复提交，部署归档包含这些文件。
+- 用户开启手势后才按需加载识别运行时。视频输入只送往本机 `Hands.send({image: video})`，没有上传、录制、持久化或外部识别 API。
+- `docs/previews/world-v0.5/geometry-reference.png` 若存在，仅是实际导出网格的 Blender 几何参考，不包含浏览器像素着色和云层；不代表网页截图或真人手势验收。
+
 ## v0.4 天空环境
 
 - 素材：Kloofendal 48d Partly Cloudy (Pure Sky)，Poly Haven。

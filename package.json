@@ -1,6 +1,6 @@
 {
   "name": "pixel-earth",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,7 +11,8 @@
   },
   "dependencies": {
     "@babylonjs/core": "9.30.0",
-    "@babylonjs/loaders": "9.30.0"
+    "@babylonjs/loaders": "9.30.0",
+    "@mediapipe/hands": "0.4.1675469240"
   },
   "devDependencies": {
     "esbuild": "0.28.2"

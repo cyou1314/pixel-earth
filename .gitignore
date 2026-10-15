@@ -7,8 +7,10 @@ node_modules/
 .openai/preview.json
 .openai/state/
 .openai/local/
-dist/app.js
 dist/app.js.LEGAL.txt
+dist/engine-v0.5.js
+dist/engine-v0.5.js.LEGAL.txt
+dist/assets/hands/
 authoring/*.blend1
 authoring/exports/
 __pycache__/
