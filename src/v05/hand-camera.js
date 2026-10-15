@@ -26,7 +26,20 @@ export class HandCamera {
       if(generation!==this.generation)return;
       const stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:'user',width:{ideal:320},height:{ideal:240}}});
       if(generation!==this.generation){stream.getTracks().forEach(track=>track.stop());return;}
-      this.stream=stream;this.video.srcObject=stream;await this.video.play();
+      this.stream=stream;this.video.srcObject=stream;
+      // If the OS revokes the camera or it is unplugged mid-session, the track
+      // ends without any callback firing; shut down cleanly instead of
+      // freezing on the last frame.
+      const track=stream.getVideoTracks?.()[0];
+      if(track&&typeof track.addEventListener==='function'){
+        track.addEventListener('ended',()=>{
+          if(generation===this.generation&&this.active){
+            void this.stop();
+            this.onError('摄像头连接已断开，请检查设备后重新开启。');
+          }
+        },{once:true});
+      }
+      await this.video.play();
       if(generation!==this.generation)return;
       this.onStatus('正在准备手势识别，首次开启稍慢…');
       await loadHands();
