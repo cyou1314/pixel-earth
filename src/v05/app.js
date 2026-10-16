@@ -104,7 +104,7 @@ async function start() {
     const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
     const scale = Math.min(devicePixelRatio || 1, 1.75, Math.sqrt(2400000 / (w * h)));
     engine.setSize(Math.max(1, Math.round(w * scale)), Math.max(1, Math.round(h * scale)));
-    framePlanet(model.camera, w, h);
+    framePlanet(model.camera, w, h, model.visualRadius);
     schedule();
   }
   function zoom(factor) {

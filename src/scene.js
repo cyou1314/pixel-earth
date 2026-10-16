@@ -13,9 +13,9 @@ import { HDRCubeTexture } from '@babylonjs/core/Materials/Textures/hdrCubeTextur
 
 export const INITIAL_VIEW = Object.freeze({ yaw: -0.62, pitch: 0.18, distance: 3.65 });
 export const LIGHT_PRESETS = Object.freeze({
-  day: { sun: 135, fill: 55, brightness: 110, azimuth: 32, elevation: 42, warmth: 0.25 },
-  warm: { sun: 145, fill: 50, brightness: 110, azimuth: -48, elevation: 27, warmth: 0.65 },
-  side: { sun: 165, fill: 62, brightness: 110, azimuth: -88, elevation: 32, warmth: 0.28 }
+  day: { sun: 140, fill: 30, brightness: 105, azimuth: -50, elevation: 38, warmth: 0.22 },
+  warm: { sun: 145, fill: 28, brightness: 105, azimuth: -62, elevation: 24, warmth: 0.65 },
+  side: { sun: 155, fill: 34, brightness: 105, azimuth: 82, elevation: 30, warmth: 0.18 }
 });
 export const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 export const limitZoom = value => clamp(value, 1.65, 6.8);
@@ -24,14 +24,14 @@ export const limitZoom = value => clamp(value, 1.65, 6.8);
 const SUN_NEUTRAL = new Color3(1, 0.99, 0.96), SUN_WARM = new Color3(1.12, 0.86, 0.62);
 const _sunDir = new Vector3();
 
-export function framePlanet(camera, width, height) {
+export function framePlanet(camera, width, height, visualRadius = 1.095) {
   const w = Math.max(1, width), h = Math.max(1, height);
   // Fit the shorter side, with room for the header and bottom controls.
   // Zoom remains a distance, so changing orientation keeps the same location.
   const usable = Math.max(Math.min(w, h) * 0.4, Math.min(w - 40, h - 132));
   const fraction = Math.min(1, usable / Math.min(w, h));
   camera.fovMode = w < h ? FreeCamera.FOVMODE_HORIZONTAL_FIXED : FreeCamera.FOVMODE_VERTICAL_FIXED;
-  camera.fov = 2 * Math.atan(1 / (2.7 * fraction));
+  camera.fov = 2 * Math.atan((visualRadius / 1.095) / (2.7 * fraction));
 }
 
 export function createPlanetScene(engine, { environment = true } = {}) {
@@ -45,12 +45,14 @@ export function createPlanetScene(engine, { environment = true } = {}) {
   camera.maxZ = 30;
   camera.inputs.clear();
   const root = new TransformNode('Planet view', scene);
+  root.rotationQuaternion = new Quaternion();
   const sun = new DirectionalLight('Sun', new Vector3(0.4, -0.6, -0.7), scene);
   sun.radius = 0.055;
-  sun.shadowMinZ = 0.1;
-  sun.shadowMaxZ = 7;
-  sun.autoCalcShadowZBounds = true;
+  sun.shadowMinZ = 2.1;
+  sun.shadowMaxZ = 4.9;
+  sun.autoCalcShadowZBounds = false;
   sun.autoUpdateExtends = false;
+  sun.shadowFrustumSize = 2.6;
   sun.orthoLeft = -1.35; sun.orthoRight = 1.35;
   sun.orthoTop = 1.35; sun.orthoBottom = -1.35;
   const fill = new HemisphericLight('Sky fill', Vector3.Up(), scene);
@@ -58,16 +60,19 @@ export function createPlanetScene(engine, { environment = true } = {}) {
   fill.groundColor = new Color3(0.25, 0.29, 0.25);
   fill.specular = Color3.Black();
   const shadows = new ShadowGenerator(1024, sun);
-  shadows.useBlurExponentialShadowMap = true;
-  shadows.useKernelBlur = true;
-  shadows.blurKernel = 12;
+  // A broad exponential blur erased the short shadows that describe relief.
+  // PCF keeps contact shadows legible; Poisson is the WebGL 1 fallback.
+  if (engine.webGLVersion > 1) {
+    shadows.usePercentageCloserFiltering = true;
+    shadows.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
+  } else shadows.usePoissonSampling = true;
   shadows.bias = 0.0002;
-  shadows.normalBias = 0.001;
-  shadows.setDarkness(0.12);
+  shadows.normalBias = 0.002;
+  shadows.setDarkness(0.05);
   const image = scene.imageProcessingConfiguration;
   image.toneMappingEnabled = true;
   image.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_KHR_PBR_NEUTRAL;
-  image.contrast = 1;
+  image.contrast = 1.08;
 
   let environmentReady = false;
   let env = null;
@@ -84,6 +89,7 @@ export function createPlanetScene(engine, { environment = true } = {}) {
 
   const air = CreateSphere('Atmosphere', { diameter: 2.05, segments: 64, sideOrientation: Mesh.BACKSIDE }, scene);
   air.isPickable = false;
+  air.alphaIndex = 30;
   const airMaterial = new ShaderMaterial('Atmosphere scattering', scene, {
     vertexSource: `precision highp float;
       attribute vec3 position; attribute vec3 normal;
@@ -104,8 +110,9 @@ export function createPlanetScene(engine, { environment = true } = {}) {
   air.material = airMaterial;
 
   function update(view, light) {
-    root.rotationQuaternion = Quaternion.RotationAxis(Vector3.Right(), view.pitch)
-      .multiply(Quaternion.RotationAxis(Vector3.Up(), view.yaw));
+    const sx = Math.sin(view.pitch / 2), cx = Math.cos(view.pitch / 2);
+    const sy = Math.sin(view.yaw / 2), cy = Math.cos(view.yaw / 2);
+    root.rotationQuaternion.set(sx * cy, cx * sy, sx * sy, cx * cy);
     camera.position.z = view.distance;
     const az = light.azimuth * Math.PI / 180, el = light.elevation * Math.PI / 180;
     _sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));

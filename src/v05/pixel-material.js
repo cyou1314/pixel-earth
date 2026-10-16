@@ -1,7 +1,7 @@
 import { MaterialPluginBase } from '@babylonjs/core/Materials/materialPluginBase.js';
 
 export class PixelSurface extends MaterialPluginBase {
-  constructor(material){super(material,'PixelSurface',180,{},true,false);this.doNotSerialize=true;this._enable(true);}
+  constructor(material){super(material,'PixelSurface',180,{PIXEL_SURFACE:true},true,false);this.doNotSerialize=true;this._enable(true);}
   isCompatible(language){return language===0;}
   getClassName(){return 'PixelSurface';}
   getCustomCode(stage){

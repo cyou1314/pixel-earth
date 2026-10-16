@@ -1,0 +1,46 @@
+{
+  "context": "surfaceless EGL desktop OpenGL, not browser WebGL",
+  "programs": {
+    "Land": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    },
+    "Ocean": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    },
+    "Rivers": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    },
+    "Clouds": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    },
+    "Atmosphere": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    },
+    "LandPCF": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    },
+    "OceanPCF": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    },
+    "RiversPCF": {
+      "vertex_compile": "passed",
+      "fragment_compile": "passed",
+      "link": "passed"
+    }
+  },
+  "adaptation": "Babylon WebGLShaderProcessor and WebGL2ShaderProcessor used in NullEngine; GLSL 330 compatibility, WebGL extension directives removed and EXT texture names mapped to core functions. PCF capabilities are simulated, not a browser GPU."
+}

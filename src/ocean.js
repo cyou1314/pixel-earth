@@ -4,7 +4,9 @@ import { MaterialPluginBase } from '@babylonjs/core/Materials/materialPluginBase
 // Object-space 3D waves have neither a UV seam nor latitude/pole stretching.
 export class OceanSurface extends MaterialPluginBase {
   constructor(material) {
-    super(material, 'OceanSurface', 180, {}, true, false);
+    // Keep shader cache keys distinct when another plugin (cloud shadows) is
+    // also registered on both land and ocean materials.
+    super(material, 'OceanSurface', 180, { OCEAN_SURFACE: true }, true, false);
     this.time = 0;
     this.registerForExtraEvents = true;
     this.doNotSerialize = true;

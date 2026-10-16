@@ -1,0 +1,104 @@
+{
+  "version": "0.5.1",
+  "renderer": "Babylon.js 9.30.0",
+  "resolution": 80,
+  "meshes": {
+    "Land": {
+      "vertices": 39366,
+      "triangles": 76800,
+      "minRadius": 0.9386715911372535,
+      "maxRadius": 1.1255121217595447
+    },
+    "Ocean": {
+      "vertices": 10086,
+      "triangles": 19200,
+      "minRadius": 0.9999999999999998,
+      "maxRadius": 1.0000000000000002
+    },
+    "Rivers": {
+      "vertices": 32778,
+      "triangles": 13822,
+      "minRadius": 1.0001999999999998,
+      "maxRadius": 1.0825717307914455
+    },
+    "Clouds": {
+      "vertices": 6534,
+      "triangles": 12288,
+      "minRadius": 1.1699999999999997,
+      "maxRadius": 1.1700000000000002
+    }
+  },
+  "landCoverage": 0.4792275214469058,
+  "rivers": 16,
+  "cubeFaceSeamDot": 0.9999999999999996,
+  "riverProjection": {
+    "minClearance": 0.0001926260244557998,
+    "maxClearance": 0.001017908021371472,
+    "samples": 88066
+  },
+  "visualRadius": 1.2,
+  "airRadius": 1.190000021604988,
+  "shadowPasses": 5,
+  "landCasterPasses": 5,
+  "shadowBounds": [
+    {
+      "preset": "day",
+      "min": [
+        -0.736698096326722,
+        -0.8236409420539289,
+        -0.7848015112208317
+      ],
+      "max": [
+        0.8157595214543328,
+        0.8150669733792569,
+        0.7669238726102596
+      ]
+    },
+    {
+      "preset": "warm",
+      "min": [
+        -0.7375269451732279,
+        -0.8411316653411546,
+        -0.7509979692143762
+      ],
+      "max": [
+        0.7919053863444799,
+        0.82089615619512,
+        0.7499926167032424
+      ]
+    },
+    {
+      "preset": "side",
+      "min": [
+        -0.7316938697025445,
+        -0.8348935672667763,
+        -0.7784217565483202
+      ],
+      "max": [
+        0.8119747942975366,
+        0.8499448964332673,
+        0.7870749881166409
+      ]
+    }
+  ],
+  "checks": [
+    "actual cube-sphere relief, mesh winding and outward normals",
+    "seam continuity and area-weighted land/ocean coverage",
+    "priority-flood drainage with sea outlets",
+    "river vertex, edge and triangle-center clearance above the actual terrain mesh",
+    "separated cloud and atmosphere shells with stable transparency order",
+    "lighting, water time and preserved camera rotation order",
+    "cloud toggle removes projected shadows; cloud-local coordinates follow globe rotation and drift",
+    "six actual camera projections including the full atmosphere",
+    "actual shadow-map and land-caster passes plus shadow-frustum coverage for all lighting presets",
+    "five prepared Poisson shader programs including reflection and cloud-shadow branches",
+    "three separately prepared WebGL 2 PCF shader branches with explicit simulated capabilities",
+    "synthetic palm rotation, pinch zoom, curled-fist pause and loss/reacquisition",
+    "stub camera permission denial, live stream shutdown and camera-disconnection events",
+    "stale camera-disconnection events cannot stop a new session",
+    "cancellation while awaiting permission and serialized restart during model initialization",
+    "local MediaPipe model, graph and WebAssembly assets",
+    "DOM bindings and unique IDs"
+  ],
+  "verification": "NullEngine does not render pixels. Synthetic landmarks and stub camera APIs do not verify a real camera or human gestures. Browser WebGL, CSS, device performance and real gesture recognition remain unverified."
+}

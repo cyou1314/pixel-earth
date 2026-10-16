@@ -1,0 +1,75 @@
+{
+  "kind": "Blender geometry reference; not a browser screenshot",
+  "source": ".qa/world-v05.json",
+  "limitations": [
+    "Different PBR and tone mapping from Babylon.js",
+    "No pixel/ocean/cloud shader, atmosphere or UI",
+    "HDR fill approximates browser ambient lighting"
+  ],
+  "meshes": {
+    "land": {
+      "vertices": 39366,
+      "triangles": 76800,
+      "exported_normals": true
+    },
+    "ocean": {
+      "vertices": 10086,
+      "triangles": 19200,
+      "exported_normals": true
+    },
+    "rivers": {
+      "vertices": 32778,
+      "triangles": 13822,
+      "exported_normals": false
+    }
+  },
+  "visual_radius": 1.2,
+  "vertical_fov_degrees": 54.981855446093455,
+  "views": {
+    "default": {
+      "light": {
+        "sun": 140,
+        "fill": 30,
+        "brightness": 105,
+        "azimuth": -50,
+        "elevation": 38,
+        "warmth": 0.22
+      },
+      "view": {
+        "yaw": -0.62,
+        "pitch": 0.18,
+        "distance": 3.65
+      }
+    },
+    "side": {
+      "light": {
+        "sun": 155,
+        "fill": 34,
+        "brightness": 105,
+        "azimuth": 82,
+        "elevation": 30,
+        "warmth": 0.18
+      },
+      "view": {
+        "yaw": -0.62,
+        "pitch": 0.18,
+        "distance": 3.65
+      }
+    },
+    "rear": {
+      "light": {
+        "sun": 140,
+        "fill": 30,
+        "brightness": 105,
+        "azimuth": -50,
+        "elevation": 38,
+        "warmth": 0.22
+      },
+      "view": {
+        "yaw": 2.521592653589793,
+        "pitch": 0.18,
+        "distance": 3.65
+      }
+    }
+  }
+}

@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "0.5.0"
+VERSION = "0.5.1"
 
 
 def extract(html):
@@ -49,7 +49,7 @@ def prepare(source):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7faec8">
-<title>小地球 · Pixel Earth v0.5</title>
+<title>小地球 · Pixel Earth v{VERSION}</title>
 <meta name="description" content="一颗拥有像素地形、河流和薄云的可交互小地球。">
 <link rel="stylesheet" href="./style.css">
 <link rel="modulepreload" href="./app.js">
@@ -120,7 +120,7 @@ def main():
     for path, content in metadata.items():
         path.write_text(content, encoding="utf-8")
     ignore_path.write_text("\n".join(line for line in ignored.splitlines() if line.strip() != "dist/app.js") + "\n", encoding="utf-8")
-    print("dist/ 更新完成：v0.5.0。请继续核验实际页面和构建流程后提交、发布。")
+    print(f"dist/ 更新完成：v{VERSION}。请继续核验实际页面和构建流程后提交、发布。")
 
 
 if __name__ == "__main__":
